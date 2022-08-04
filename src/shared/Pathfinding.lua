@@ -4,7 +4,7 @@ Pathfinding.__index = Pathfinding
 local Nodes = {}
 Nodes.__index = Nodes
 
-local offsets = {
+--[[ocal offsets = {
 	["Right"] = Vector3.new(-1, 0, 0),
 	["Left"] = Vector3.new(1, 0, 0),
 	["Up"] = Vector3.new(0, 0, 1),
@@ -13,6 +13,13 @@ local offsets = {
 	["Right Down"] = Vector3.new(-1, 0, -1),
 	["Left Up"] = Vector3.new(1, 0, 1),
 	["Left Down"] = Vector3.new(1, 0, -1),
+}]]
+
+local offsets = {
+	["Right"] = Vector3.new(-1, 0, 0),
+	["Left"] = Vector3.new(1, 0, 0),
+	["Up"] = Vector3.new(0, 0, 1),
+	["Down"] = Vector3.new(0, 0, -1),
 }
 
 -- Node Functions --
@@ -40,9 +47,12 @@ end
 function Pathfinding.Node(location, start, end_location, Parent)
 	local node = Nodes.new(location)
 	if start then
-		node.G_Cost = (location - start).magnitude
+		node.G_Cost = (start - location).magnitude
 		node.Distance = (end_location - location).magnitude
-		node.Parent = Parent
+		print(node.G_Cost, node.Distance)
+		if Parent then
+			node.Parent = Parent
+		end
 	end
 	return node
 end
@@ -64,40 +74,56 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 		table.insert(closed_set, blacklist[i])
 	end
 	-- Add the start node to the open set
-	table.insert(open_set, Pathfinding.Node(start, nil, end_pos, nil))
+	table.insert(open_set, Pathfinding.Node(start, start, end_pos, nil))
 	table.insert(path, start)
 
 	while #open_set > 0 do
-		local starting_node = open_set[1]
-		local current = starting_node
-		local ignore_set = closed_set
-		for i = 1, #open_set do
-			table.insert(ignore_set, open_set[i].Location)
-		end
-		for _, neighbour in pairs(current:GetNeighbours(ignore_set)) do
-			table.insert(open_set, neighbour)
-		end
-		for i = 2, #open_set, 1 do -- Get lowest cost node
+		local current = open_set[1]
+		-- Calculate lowest F_Cost
+		for i = 2, #open_set do
 			if
-				open_set[i].Distance + open_set[i].G_Cost < current.Distance + current.G_Cost
-				or current.Distance == 0
+				open_set[i].G_Cost + open_set[i].Distance < current.G_Cost + current.Distance
+				or open_set[i].G_Cost + open_set[i].Distance == current.G_Cost + current.Distance
+					and open_set[i].Distance < current.Distance
 			then
 				current = open_set[i]
 			end
 		end
-
-		table.remove(open_set, 1)
-		table.insert(closed_set, current.Location)
-
-		current.Parent = starting_node
+		-- Remove current from open set
+		table.remove(open_set, i)
+		-- Add current to closed set
+		table.insert(closed_set, current)
+		-- Check if current is the end node
 		if current.Location == end_pos then
-			local node = current
-			while node.Parent do
-				table.insert(path, node.Location)
-				node = node.Parent
+			-- Add current to path
+			table.insert(path, current.Location)
+			-- Add current's parent to path
+			while current.Parent do
+				table.insert(path, current.Parent.Location)
+				current = current.Parent
+				task.wait()
 			end
-			table.insert(path, node.Location)
+			-- Return path
 			return path
+		end
+		-- Get current's neighbours
+		local neighbours = current:GetNeighbours(closed_set)
+
+		-- For each neighbour
+		for _, neighbour in neighbours do
+			local new_cost = current.G_Cost + (neighbour.Location - current.Location).magnitude
+			if new_cost < neighbour.G_Cost or not table.find(open_set, neighbour) then
+				-- Update neighbour's parent
+				neighbour.Parent = current
+				-- Update neighbour's G_Cost
+				neighbour.G_Cost = new_cost
+				-- Update neighbour's Distance
+				neighbour.Distance = (end_pos - neighbour.Location).magnitude
+				-- Add neighbour to open set
+				if not table.find(open_set, neighbour) then
+					table.insert(open_set, neighbour)
+				end
+			end
 		end
 		task.wait()
 	end
