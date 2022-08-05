@@ -59,13 +59,13 @@ function Nodes:GetNeighbours(blacklist)
 	for direction, offset in pairs(offsets) do
 		local neighbour = self.Location + offset
 		if not blacklist[neighbour] then
-			neighbours[direction] = Pathfinding.Node(neighbour, self._start, self._end, direction)
+			neighbours[direction] = Pathfinding.Node(neighbour, self._start, self._end)
 		end
 	end
 	return neighbours
 end
 
-function Pathfinding.Node(location, start, end_location, direction)
+function Pathfinding.Node(location, start, end_location)
 	local node = Nodes.new(location)
 	if start then
 		node.G_Cost = (start - location).magnitude
