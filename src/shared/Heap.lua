@@ -7,25 +7,19 @@ Heap.__index = Heap
 local function CompareTo(item1, item2)
 	local f_Cost1 = item1.Distance + item1.G_Cost
 	local f_Cost2 = item2.Distance + item2.G_Cost
-	if f_Cost1 < f_Cost2 then
-		return -1
-	elseif f_Cost1 > f_Cost2 then
-		return 1
-	elseif f_Cost1 == f_Cost2 then
-		return 0
-	end
+	return f_Cost1 - f_Cost2
 end
 --Public:
-function Heap.new(heap_size)
+function Heap.new()
 	return setmetatable({
-		items = table.create(heap_size),
-		item_count = 0,
+		items = {},
+		item_count = 1,
 	}, Heap)
 end
 
 function Heap:Add(item)
-	item.HeapIndex = self.item_count + 1
-	self.items[self.item_count + 1] = item
+	item.HeapIndex = self.item_count
+	self.items[self.item_count] = item
 	self:SortUp(item)
 	self.item_count = self.item_count + 1
 end
@@ -34,8 +28,8 @@ function Heap:RemoveFirst()
 	local first = self.items[1]
 	self.item_count = self.item_count - 1
 	self.items[1] = self.items[self.item_count]
-	self.items[1].HeapIndex = 0
-	self:SortDown(self.item[1])
+	self.items[1].HeapIndex = 1
+	self:SortDown(self.items[1])
 	return first
 end
 
@@ -52,15 +46,18 @@ function Heap:Contains(item)
 end
 
 function Heap:SortUp(item: table)
-	local parent = (item.HeapIndex - 1) / 2
-
+	local parent = math.floor((item.HeapIndex - 1) / 2) + 1
+	if parent == 0 then
+		parent = 1
+	end
 	while true do
 		local parent_item = self.items[parent]
-		if CompareTo(item, parent_item) > 0 then
+		if CompareTo(item, parent_item) < 0 then
 			self:Swap(item, parent_item)
 		else
 			break
 		end
+		parent = math.floor((item.HeapIndex - 1) / 2) + 1
 	end
 end
 
