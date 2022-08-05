@@ -81,7 +81,7 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 	local open_set = {} -- The set of nodes to be evaluated
 	local closed_set = {} -- The set of nodes already evaluated
 
-	local start = os.clock()
+	local start_time = os.clock()
 	for i = 1, #blacklist do
 		if typeof(blacklist[i]) == "Vector3" then
 			blacklist[blacklist[i]] = true
@@ -125,7 +125,7 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 				current = current.Parent
 				task.wait()
 			end
-			print("Path found in " .. (os.clock() - start) .. " seconds")
+			print("Path found in " .. (os.clock() - start_time) .. " seconds")
 			-- Return path
 			return path
 		end

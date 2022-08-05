@@ -1,4 +1,4 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+--local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --[[local Pathfinding = require(ReplicatedStorage.Common.Pathfinding)
 local path
