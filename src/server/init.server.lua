@@ -1,6 +1,6 @@
---local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
---[[local Pathfinding = require(ReplicatedStorage.Common.Pathfinding)
+local Pathfinding = require(ReplicatedStorage.Common.Pathfinding)
 local path
 task.spawn(function()
 	path = Pathfinding.GeneratePath(Vector3.new(0, 0, 0), Vector3.new(5, 0, 0), {})
@@ -21,4 +21,3 @@ for i = 1, #path do
 	part.Color = Color3.new(1, 0, 0)
 	part.Parent = game.Workspace
 end
-]]
