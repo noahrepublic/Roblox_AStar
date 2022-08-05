@@ -57,7 +57,7 @@ function Nodes:GetNeighbours(blacklist)
 	for direction, offset in pairs(offsets) do
 		local neighbour = self.Location + offset
 		if not blacklist[neighbour] then
-			neighbours[direction] = Pathfinding.Node(neighbour)
+			neighbours[direction] = Pathfinding.Node(neighbour) -- I NEED THE START STUFF HERE
 		end
 	end
 	return neighbours
@@ -81,6 +81,7 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 	local open_set = {} -- The set of nodes to be evaluated
 	local closed_set = {} -- The set of nodes already evaluated
 
+	local start = os.clock()
 	for i = 1, #blacklist do
 		if typeof(blacklist[i]) == "Vector3" then
 			blacklist[blacklist[i]] = true
@@ -97,20 +98,19 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 	table.insert(path, start)
 
 	while #open_set > 0 do
-		local current = open_set[1]
+		local current, index = open_set[1], nil
 		-- Calculate lowest F_Cost
-		local i = nil
 		for i = 2, #open_set do
 			if
 				open_set[i].G_Cost + open_set[i].Distance < current.G_Cost + current.Distance
 				or open_set[i].G_Cost + open_set[i].Distance == current.G_Cost + current.Distance
 					and open_set[i].Distance < current.Distance
 			then
-				current = open_set[i]
+				current = open_set[i], i
 			end
 		end
 		-- Remove current from open set
-		table.remove(open_set, i)
+		table.remove(open_set, index)
 		-- Add current to closed set
 		table.insert(closed_set, current)
 		visualize(current.Location)
@@ -125,6 +125,7 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 				current = current.Parent
 				task.wait()
 			end
+			print("Path found in " .. (os.clock() - start) .. " seconds")
 			-- Return path
 			return path
 		end
