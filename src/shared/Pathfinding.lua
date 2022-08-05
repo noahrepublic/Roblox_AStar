@@ -3,6 +3,7 @@ Pathfinding.__index = Pathfinding
 
 local Nodes = {}
 Nodes.__index = Nodes
+
 local offsets = {
 	["Right"] = Vector3.new(-1, 0, 0),
 	["Left"] = Vector3.new(1, 0, 0),
@@ -14,12 +15,18 @@ local offsets = {
 	["Left Down"] = Vector3.new(1, 0, -1),
 }
 
---[[local offsets = {
-	["Right"] = Vector3.new(-1, 0, 0),
-	["Left"] = Vector3.new(1, 0, 0),
-	["Up"] = Vector3.new(0, 0, 1),
-	["Down"] = Vector3.new(0, 0, -1),
+--[[local weights = {
+	["Right"] = 1,
+	["Left"] = 1,
+	["Up"] = 1,
+	["Down"] = 1,
+	["Right Up"] = 2,
+	["Right Down"] = 2,
+	["Left Up"] = 2,
+	["Left Down"] = 2,
 }]]
+
+local Heaps = require(script.Parent.Heap)
 
 local function visualize(location)
 	local part = Instance.new("Part")
@@ -41,15 +48,10 @@ function Nodes.new(location)
 		Distance = 0,
 		Parent = nil,
 		HeapIndex = nil,
-	}, Nodes)
-end
 
-function Nodes:CompareTo(nodeTo_Compare)
-	local compare = self.Distance + self.G_Cost - nodeTo_Compare.Distance - nodeTo_Compare.G_Cost
-	if compare == 0 then
-		compare = self.Distance - nodeTo_Compare.Distance
-	end
-	return -compare
+		_start = nil,
+		_end = nil,
+	}, Nodes)
 end
 
 function Nodes:GetNeighbours(blacklist)
@@ -57,28 +59,26 @@ function Nodes:GetNeighbours(blacklist)
 	for direction, offset in pairs(offsets) do
 		local neighbour = self.Location + offset
 		if not blacklist[neighbour] then
-			neighbours[direction] = Pathfinding.Node(neighbour) -- I NEED THE START STUFF HERE
+			neighbours[direction] = Pathfinding.Node(neighbour, self._start, self._end, direction)
 		end
 	end
 	return neighbours
 end
 
-function Pathfinding.Node(location, start, end_location, Parent)
+function Pathfinding.Node(location, start, end_location, direction)
 	local node = Nodes.new(location)
 	if start then
 		node.G_Cost = (start - location).magnitude
 		node.Distance = (end_location - location).magnitude
-		print(node.G_Cost, node.Distance)
-		if Parent then
-			node.Parent = Parent
-		end
+		node._start = start
+		node._end = end_location
 	end
 	return node
 end
 
-function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: table)
+function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist)
 	local path = {} -- The final path
-	local open_set = {} -- The set of nodes to be evaluated
+	local open_set = Heaps.new() -- The set of nodes to be evaluated
 	local closed_set = {} -- The set of nodes already evaluated
 
 	local start_time = os.clock()
@@ -94,26 +94,14 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 		table.insert(closed_set, blacklist[i])
 	end
 	-- Add the start node to the open set
-	table.insert(open_set, Pathfinding.Node(start, start, end_pos, nil))
+	open_set:Add(Pathfinding.Node(start, start, end_pos, nil))
 	table.insert(path, start)
 
-	while #open_set > 0 do
-		local current, index = open_set[1], nil
-		-- Calculate lowest F_Cost
-		for i = 2, #open_set do
-			if
-				open_set[i].G_Cost + open_set[i].Distance < current.G_Cost + current.Distance
-				or open_set[i].G_Cost + open_set[i].Distance == current.G_Cost + current.Distance
-					and open_set[i].Distance < current.Distance
-			then
-				current = open_set[i], i
-			end
-		end
-		-- Remove current from open set
-		table.remove(open_set, index)
+	while open_set.item_count > 0 do
+		local current = open_set:RemoveFirst()
 		-- Add current to closed set
-		table.insert(closed_set, current)
-		visualize(current.Location)
+		table.insert(closed_set, current.Location)
+		--visualize(current.Location)
 
 		-- Check if current is the end node
 		if current.Location == end_pos then
@@ -134,7 +122,7 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 
 		-- For each neighbour
 		for _, neighbour in neighbours do
-			visualize(neighbour.Location)
+			--visualize(neighbour.Location)
 			local new_cost = current.G_Cost + (neighbour.Location - current.Location).magnitude
 			if new_cost < neighbour.G_Cost or not table.find(open_set, neighbour) then
 				-- Update neighbour's parent
@@ -144,8 +132,8 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 				-- Update neighbour's Distance
 				neighbour.Distance = (end_pos - neighbour.Location).magnitude
 				-- Add neighbour to open set
-				if not table.find(open_set, neighbour) then
-					table.insert(open_set, neighbour)
+				if not open_set:Contains(neighbour) then
+					open_set:Add(neighbour)
 				end
 			end
 		end
