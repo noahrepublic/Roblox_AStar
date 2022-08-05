@@ -3,8 +3,7 @@ Pathfinding.__index = Pathfinding
 
 local Nodes = {}
 Nodes.__index = Nodes
-
---[[ocal offsets = {
+local offsets = {
 	["Right"] = Vector3.new(-1, 0, 0),
 	["Left"] = Vector3.new(1, 0, 0),
 	["Up"] = Vector3.new(0, 0, 1),
@@ -13,14 +12,25 @@ Nodes.__index = Nodes
 	["Right Down"] = Vector3.new(-1, 0, -1),
 	["Left Up"] = Vector3.new(1, 0, 1),
 	["Left Down"] = Vector3.new(1, 0, -1),
-}]]
+}
 
-local offsets = {
+--[[local offsets = {
 	["Right"] = Vector3.new(-1, 0, 0),
 	["Left"] = Vector3.new(1, 0, 0),
 	["Up"] = Vector3.new(0, 0, 1),
 	["Down"] = Vector3.new(0, 0, -1),
-}
+}]]
+
+local function visualize(location)
+	local part = Instance.new("Part")
+	part.Anchored = true
+	part.CanCollide = false
+	part.Size = Vector3.new(1, 1, 1)
+	part.Position = location
+	part.BrickColor = BrickColor.new("Bright red")
+	part.Transparency = 0.5
+	part.Parent = game.Workspace
+end
 
 -- Node Functions --
 
@@ -30,7 +40,16 @@ function Nodes.new(location)
 		G_Cost = 0,
 		Distance = 0,
 		Parent = nil,
+		HeapIndex = nil,
 	}, Nodes)
+end
+
+function Nodes:CompareTo(nodeTo_Compare)
+	local compare = self.Distance + self.G_Cost - nodeTo_Compare.Distance - nodeTo_Compare.G_Cost
+	if compare == 0 then
+		compare = self.Distance - nodeTo_Compare.Distance
+	end
+	return -compare
 end
 
 function Nodes:GetNeighbours(blacklist)
@@ -80,6 +99,7 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 	while #open_set > 0 do
 		local current = open_set[1]
 		-- Calculate lowest F_Cost
+		local i = nil
 		for i = 2, #open_set do
 			if
 				open_set[i].G_Cost + open_set[i].Distance < current.G_Cost + current.Distance
@@ -93,6 +113,8 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 		table.remove(open_set, i)
 		-- Add current to closed set
 		table.insert(closed_set, current)
+		visualize(current.Location)
+
 		-- Check if current is the end node
 		if current.Location == end_pos then
 			-- Add current to path
@@ -111,6 +133,7 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist: t
 
 		-- For each neighbour
 		for _, neighbour in neighbours do
+			visualize(neighbour.Location)
 			local new_cost = current.G_Cost + (neighbour.Location - current.Location).magnitude
 			if new_cost < neighbour.G_Cost or not table.find(open_set, neighbour) then
 				-- Update neighbour's parent
