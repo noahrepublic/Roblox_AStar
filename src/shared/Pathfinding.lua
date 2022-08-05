@@ -15,7 +15,7 @@ local offsets = {
 	["Left Down"] = Vector3.new(1, 0, -1),
 }
 
---[[local weights = {
+local weights = {
 	["Right"] = 1,
 	["Left"] = 1,
 	["Up"] = 1,
@@ -24,7 +24,7 @@ local offsets = {
 	["Right Down"] = 2,
 	["Left Up"] = 2,
 	["Left Down"] = 2,
-}]]
+}
 
 local Heaps = require(script.Parent.Heap)
 
@@ -54,24 +54,28 @@ function Nodes.new(location)
 	}, Nodes)
 end
 
-function Nodes:GetNeighbours(blacklist)
+function Nodes:GetNeighbours(blacklist, blacklist2)
 	local neighbours = {}
 	for direction, offset in pairs(offsets) do
 		local neighbour = self.Location + offset
-		if not blacklist[neighbour] then
-			neighbours[direction] = Pathfinding.Node(neighbour, self._start, self._end)
+		if not blacklist[neighbour] and not blacklist2[neighbour] then
+			neighbours[direction] = Pathfinding.Node(neighbour, self._start, self._end, direction)
 		end
 	end
 	return neighbours
 end
 
-function Pathfinding.Node(location, start, end_location)
+function Pathfinding.Node(location, start, end_location, direction)
 	local node = Nodes.new(location)
 	if start then
 		node.G_Cost = (start - location).magnitude
 		node.Distance = (end_location - location).magnitude
 		node._start = start
 		node._end = end_location
+		if direction then
+			node.G_Cost = node.G_Cost * weights[direction]
+			node.Distance = node.Distance * weights[direction]
+		end
 	end
 	return node
 end
@@ -86,22 +90,23 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist)
 		if typeof(blacklist[i]) == "Vector3" then
 			blacklist[blacklist[i]] = true
 		else
-			blacklist[blacklist[i].Location] = true
+			blacklist[blacklist[i].Position] = true
 		end
 		if blacklist[i] == start then
 			return {}
 		end
-		table.insert(closed_set, blacklist[i])
 	end
 	-- Add the start node to the open set
 	open_set:Add(Pathfinding.Node(start, start, end_pos, nil))
 	table.insert(path, start)
 
+	visualize(start)
+
 	while open_set.item_count > 0 do
 		local current = open_set:RemoveFirst()
 		-- Add current to closed set
 		table.insert(closed_set, current.Location)
-		--visualize(current.Location)
+		visualize(current.Location)
 
 		-- Check if current is the end node
 		if current.Location == end_pos then
@@ -118,11 +123,11 @@ function Pathfinding.GeneratePath(start: Vector3, end_pos: Vector3, blacklist)
 			return path
 		end
 		-- Get current's neighbours
-		local neighbours = current:GetNeighbours(closed_set)
+		local neighbours = current:GetNeighbours(closed_set, blacklist)
 
 		-- For each neighbour
 		for _, neighbour in neighbours do
-			--visualize(neighbour.Location)
+			visualize(neighbour.Location)
 			local new_cost = current.G_Cost + (neighbour.Location - current.Location).magnitude
 			if new_cost < neighbour.G_Cost or not table.find(open_set, neighbour) then
 				-- Update neighbour's parent
