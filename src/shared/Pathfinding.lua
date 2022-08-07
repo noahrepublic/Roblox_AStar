@@ -42,12 +42,13 @@ function Pathfinding.GeneratePath(_start: Vector3, _end: Vector3, blacklist: tab
 	end)
 	local closed_set = {}
 	open_set:Insert(start_node)
+	Pathfinding.CalculateCosts(start_node, _start, _end)
 
 	while #open_set > 0 do
 		print("yo")
 		local current_node = open_set:Pop()
 		table.insert(closed_set, current_node)
-		if current_node == end_node then
+		if current_node.Position == end_node.Position then
 			table.insert(path, current_node.position)
 			while current_node.parent do
 				table.insert(path, current_node.parent.position)
@@ -56,6 +57,7 @@ function Pathfinding.GeneratePath(_start: Vector3, _end: Vector3, blacklist: tab
 		end
 
 		for _, node in pairs(current_node:GetNeighbours()) do
+			Pathfinding.CalculateCosts(node, _start, _end)
 			if not node.walkable or table.find(closed_set, node) then
 				continue
 			end
@@ -76,6 +78,7 @@ function Pathfinding.GeneratePath(_start: Vector3, _end: Vector3, blacklist: tab
 			end
 		end
 	end
+	return path
 end
 
 return Pathfinding
