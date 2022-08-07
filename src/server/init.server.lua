@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Pathfinding = require(ReplicatedStorage.Common.Pathfinding)
 local path
 task.spawn(function()
-	path = Pathfinding.GeneratePath(Vector3.new(0, 0, 0), Vector3.new(5, 0, 0), {})
+	path = Pathfinding.GeneratePath(Vector3.new(0, 0, 0), Vector3.new(5, 0, 0))
 end)
 repeat
 	task.wait()

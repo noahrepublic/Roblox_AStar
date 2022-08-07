@@ -29,7 +29,7 @@ function Pathfinding.CalculateCosts(_node, _start: Vector3, _end: Vector3)
 	return _node.f_cost -- do I return?
 end
 
-function Pathfinding.GeneratePath(_start: Vector3, _end: Vector3, blacklist: table)
+function Pathfinding.GeneratePath(_start: Vector3, _end: Vector3)
 	local d = (_end - _start).Magnitude
 	local Grid = Grids.new(Vector2.new(d, d), 1)
 
